@@ -29,13 +29,3 @@ def load_images_from_urls(url_list):
         except:
             print(f"Failed: {url}")
     return images
-
-
-# Example URLs you can use:
-HF_TEST_IMAGES = [
-    "https://llava-vl.github.io/static/images/view.jpg",
-    "https://llava-vl.github.io/static/images/monalisa.jpg",
-    "https://llava-vl.github.io/static/images/4.png",
-    "https://llava-vl.github.io/static/images/5.jpg",
-    "https://llava-vl.github.io/static/images/rabbit.jpg"
-]

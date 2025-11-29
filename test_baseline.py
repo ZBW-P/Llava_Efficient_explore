@@ -24,7 +24,7 @@ def Basic_TRY():
     clear_memory()
 
     print("=" * 80)
-    print("Baseline_with_kv_cache Test for LLaVA")
+    print("Baseline_without_kv_cache Test for LLaVA")
     print("=" * 80)
 
     # Load processor & model

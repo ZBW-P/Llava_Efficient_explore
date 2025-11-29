@@ -1,5 +1,7 @@
 import torch
-
+# ========================================================
+# Original Element-Wise Pruning (Unstructured) save based on larger amount of zeroes
+# ========================================================
 def Pruning(kv_cache, pruning_ratio: float):
     """
     Original element-wise magnitude pruning (unstructured).
@@ -25,23 +27,15 @@ def Pruning(kv_cache, pruning_ratio: float):
 
 
 # ========================================================
-# ⭐ New: Channel-Wise Structured Pruning (for Method 2/3)
+# Channel-Wise Pruning save based on larger amount of zeroes
 # ========================================================
 
 def prune_kv_channels(kv_cache, pruning_ratio: float):
-    """
-    Structured pruning: remove entire attention channels (D dimension)
-    across all heads/time steps.
-
-    pruning_ratio: fraction of channels to prune (0.0 ~ 1.0)
-        Ex: pruning_ratio=0.3 → prune lowest 30% channels by L2 norm.
-    """
-
     pruned_cache = []
 
     for k, v in kv_cache:
         # k, v: [B, H, L, D]
-        B, H, L, D = k.shape
+        D = k.shape[-1]
 
         # Flatten across (batch * heads * seq_len) => [B*H*L, D]
         k_flat = k.view(-1, D).float()
@@ -66,6 +60,35 @@ def prune_kv_channels(kv_cache, pruning_ratio: float):
         # Apply structured pruning
         k_pruned = k * mask
         v_pruned = v * mask
+
+        pruned_cache.append((k_pruned, v_pruned))
+
+    return tuple(pruned_cache)
+
+
+########################################################
+# Channel-Wise Pruning with Dimension Reduction different from above save in dimension
+########################################################
+def prune_kv_channels_structure(kv_cache, pruning_ratio: float):
+    pruned_cache = []
+
+    for k, v in kv_cache:
+        D = k.shape[-1]
+
+        k_flat = k.view(-1, D).float()
+        v_flat = v.view(-1, D).float()
+
+        k_norm = torch.norm(k_flat, dim=0)
+        v_norm = torch.norm(v_flat, dim=0)
+
+        importance = k_norm + v_norm
+
+        threshold = torch.quantile(importance, pruning_ratio)
+        keep_mask = importance >= threshold
+
+        # True pruning: reduce D dimension
+        k_pruned = k[:, :, :, keep_mask]
+        v_pruned = v[:, :, :, keep_mask]
 
         pruned_cache.append((k_pruned, v_pruned))
 
