@@ -45,6 +45,7 @@ def FlashAttention_TRY_batch():
             f"Throughput={r['throughput']:.2f} tok/s, "
             f"Memory={r['memory']:.2f} GB"
         )
+    print()
 
 
 if __name__ == "__main__":

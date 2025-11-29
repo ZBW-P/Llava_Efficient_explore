@@ -39,7 +39,15 @@ def Basic_TRY():
 
     # Baseline KV Cache test
     batch_results = run_all_stress_tests(model, processor,maxbatchsize=32)
-
+    print("\nBaseline Batch Results:")
+    for bs, r in batch_results.items():
+        print(
+            f"  BS={bs}: "
+            f"Latency={r['latency']:.3f}s, "
+            f"Throughput={r['throughput']:.2f} tok/s, "
+            f"Memory={r['memory']:.2f} GB"
+        )
+    print()
 
 
 if __name__ == "__main__":

@@ -11,15 +11,11 @@ MODEL_ID = "llava-hf/llava-1.5-7b-hf"
 SAMPLE_PROMPT = "USER: <image>\nDescribe this image in detail.\nASSISTANT:"
 
 
-def INT4_ChannelPrune_Quant_TRY_batch():
+def INT4_ChannelPrune_Quant_TRY_batch(use_structure_prun=False):
     """
     Method 2:
     Bitsandbytes INT4 + channel-wise KV pruning + KV cache fake quantization (Batch Test).
     """
-    print("Loading sample image...")
-    image = load_sample_image()
-    print(f"Image size: {image.size}")
-    print()
 
     try:
         del model, processor
@@ -49,21 +45,24 @@ def INT4_ChannelPrune_Quant_TRY_batch():
         maxbatchsize=32,
         method="channelwise",
         kv_bits=8,
-        pruning_ratio=0.3,
+        pruning_ratio=0.7,
         use_kv_quant=True,
         use_prun=True,
+        use_structure_prun=use_structure_prun, 
     )
 
     print("\nMethod 2 Batch Results (INT4 + Channel-wise Prune + KV Quant):")
     for bs, r in batch_results.items():
         print(
             f"  BS={bs}: "
-            f"Latency={r['latency']:.3f}s, "
+            f"Latency={r['total_time']:.3f}s, "
             f"Throughput={r['throughput']:.2f} tok/s, "
-            f"Memory={r['memory']:.2f} GB"
+            f"Memory={r['peak_memory_gb']:.2f} GB"
         )
     print()
 
 
 if __name__ == "__main__":
-    INT4_ChannelPrune_Quant_TRY_batch()
+  print("\nUsing unstructure for Pruning:")
+  INT4_ChannelPrune_Quant_TRY_batch()
+

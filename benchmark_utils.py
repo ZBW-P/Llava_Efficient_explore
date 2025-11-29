@@ -5,8 +5,8 @@ import torch
 
 from memory_utils import clear_memory, get_memory_usage
 from quant_utils import quantize_int8, dequantize_int8
-from kv_utils import Pruning
-from kv_utils import prune_kv_channels,prune_kv_channels_structure
+from kv_utils import Pruning,Pruning_topk
+from kv_utils import prune_kv_channels
 
 # -----------------------------------------------------------
 #   BASELINE / FLASH-ATTEINON MODEL INFERENCE
@@ -151,7 +151,9 @@ def run_inference_quan_prun(
     use_kv_quant=False,
     kv_bits=8,
     use_prun=False,
-    pruning=0.0
+    pruning=0.0,
+    bs=1,
+    use_topk=False
 ):
     clear_memory()
 
@@ -164,6 +166,9 @@ def run_inference_quan_prun(
 
     # KV PRUNING (if enabled)
     if use_prun:
+      if use_topk:
+        kv_cache = Pruning_topk(kv_cache, pruning_ratio=pruning)
+      else:
         kv_cache = Pruning(kv_cache, pruning_ratio=pruning)
 
     # KV QUANTIZATION (if enabled)
@@ -201,7 +206,7 @@ def run_inference_quan_prun(
     total_time = end_time - start_time
     decoded = processor.decode(gen_out[0], skip_special_tokens=True)
     num_tokens = gen_out.shape[1] - 1
-    throughput = num_tokens / total_time
+    throughput = num_tokens*bs / total_time
     peak_memory = get_memory_usage()
 
     return {
@@ -237,7 +242,8 @@ def benchmark_model_q_p(
             use_kv_quant=use_kv_quant,
             kv_bits=kv_bits,
             use_prun=use_prun,
-            pruning=pruning
+            pruning=pruning,
+            bs=1
         )
         results.append(result)
 
@@ -273,6 +279,7 @@ def run_inference_channelwise(
     use_kv_quant=True,
     kv_bits=8,
     use_structure_prun=False,
+    bs=1
 ):
 
     clear_memory()
@@ -286,7 +293,7 @@ def run_inference_channelwise(
 
     # 2) Channel-wise pruning
     if use_structure_prun:
-        kv_cache = prune_kv_channels_structure(kv_cache, pruning_ratio=pruning_ratio)
+        kv_cache = kv_cache
     else:
         kv_cache = prune_kv_channels(kv_cache, pruning_ratio=pruning_ratio)
     
@@ -322,7 +329,7 @@ def run_inference_channelwise(
     total_time = end_time - start_time
     decoded = processor.decode(gen_out[0], skip_special_tokens=True)
     num_tokens = gen_out.shape[1] - 1
-    throughput = num_tokens / total_time
+    throughput = num_tokens*bs / total_time
     peak_memory = get_memory_usage()
 
     return {
@@ -359,6 +366,7 @@ def benchmark_channelwise(
             use_kv_quant=use_kv_quant,
             kv_bits=kv_bits,
             use_structure_prun=use_structure_prun,
+            bs=1
         )
         results.append(result)
         print(
@@ -463,6 +471,7 @@ def stress_test_batch_size(
     use_prun=True,
     max_tokens=100,
     use_structure_prun=False,
+    use_topk=False
 ):
     print("\n==============================")
     print(f"  Batch Size Stress Test ({method})")
@@ -489,7 +498,8 @@ def stress_test_batch_size(
                   kv_bits=kv_bits,
                   use_prun=use_prun,
                   pruning=pruning_ratio,
-                  
+                  bs=bs,
+                  use_topk=use_topk  
               )
           elif method == "channelwise":
               r = run_inference_channelwise(
@@ -500,6 +510,7 @@ def stress_test_batch_size(
                   use_kv_quant=use_kv_quant,
                   kv_bits=kv_bits,
                   use_structure_prun=use_structure_prun,
+                  bs=bs
               )
           else:
               raise ValueError("method must be tensorwise or channelwise")
@@ -514,11 +525,7 @@ def stress_test_batch_size(
           )
         except Exception as e:
           print(f"[ERROR] BS={bs} failed: {e}")
-
-          import torch
-          if torch.cuda.is_available():
-              torch.cuda.empty_cache()
-              torch.cuda.synchronize()
+          clear_memory()
 
     return results
 
@@ -526,7 +533,7 @@ def stress_test_batch_size(
 #   Unified Function: Run Both Tests
 # ============================================================
 
-def run_all_stress_tests(model, processor,maxbatchsize=32,method=None,kv_bits=8,pruning_ratio=0.3,use_kv_quant=False,use_prun=False,use_structure_prun=False):
+def run_all_stress_tests(model, processor,maxbatchsize=32,method=None,kv_bits=8,pruning_ratio=0.7,use_kv_quant=False,use_prun=False,use_structure_prun=False,use_topk=False):
     clear_memory()
     
     HF_TEST_IMAGES = [
@@ -537,8 +544,10 @@ def run_all_stress_tests(model, processor,maxbatchsize=32,method=None,kv_bits=8,
         batch_results = stress_test_batch_size(model, processor, images,
                                                method=method,kv_bits=kv_bits,
                                                pruning_ratio=pruning_ratio,
-                                               use_kv_quant=use_kv_quant,
-                                               use_prun=use_prun,use_structure_prun=use_structure_prun)
+                                               use_kv_quant=use_kv_quant,batch_sizes=(4, 8, 16, 32, 64, 128),
+                                               use_prun=use_prun,use_structure_prun=use_structure_prun,
+                                               use_topk=use_topk
+                                               )
     else:
         batch_results = stress_test_batch_size_basic(model, processor, images)
 

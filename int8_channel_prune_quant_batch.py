@@ -1,19 +1,21 @@
+import time
 import torch
 from transformers import AutoProcessor, LlavaForConditionalGeneration
+import bitsandbytes
 
 from image_utils import load_sample_image
 from memory_utils import clear_memory
-from benchmark_utils import run_all_stress_tests
+from benchmark_utils import run_all_stress_tests 
 
 MODEL_ID = "llava-hf/llava-1.5-7b-hf"
 SAMPLE_PROMPT = "USER: <image>\nDescribe this image in detail.\nASSISTANT:"
 
 
-def prun_quant_kv_TRY_batch(use_topk=False):
-    print("Loading sample image...")
-    image = load_sample_image()
-    print(f"Image size: {image.size}")
-    print()
+def INT8_ChannelPrune_Quant_TRY_batch(use_structure_prun=False):
+    """
+    Method 2:
+    Bitsandbytes INT8 + channel-wise KV pruning + KV cache fake quantization (Batch Test).
+    """
 
     try:
         del model, processor
@@ -23,29 +25,33 @@ def prun_quant_kv_TRY_batch(use_topk=False):
     clear_memory()
 
     print("=" * 80)
-    print("Tensor-wise KV Pruning + Quantization Batch Test for LLaVA")
+    print("Method 2: INT8 + Channel-wise KV Pruning + KV Quantization (Batch Test)")
     print("=" * 80)
 
+    # Load model in 8-bit
     processor = AutoProcessor.from_pretrained(MODEL_ID)
     model = LlavaForConditionalGeneration.from_pretrained(
         MODEL_ID,
+        device_map="auto",
+        load_in_8bit=True,
         torch_dtype=torch.float16,
-        device_map="auto"
     )
-    print("Model loaded.\n")
+    print("INT8 model loaded (bitsandbytes).\n")
 
-    #  Run batch test with tensor-wise method
+    # Batch test using channel-wise pruning + quant pipeline
     batch_results = run_all_stress_tests(
         model,
         processor,
         maxbatchsize=32,
-        method="tensorwise",
+        method="channelwise",
         kv_bits=8,
-        pruning_ratio=0.7,use_kv_quant=True,use_prun=True,
-        use_topk=use_topk,
+        pruning_ratio=0.7,
+        use_kv_quant=True,
+        use_prun=True,
+        use_structure_prun=use_structure_prun,
     )
 
-    print("\nTensor-wise Prune + Quant KV Batch Results:")
+    print("\nMethod 2 Batch Results (INT8 + Channel-wise Prune + KV Quant):")
     for bs, r in batch_results.items():
         print(
             f"  BS={bs}: "
@@ -57,7 +63,6 @@ def prun_quant_kv_TRY_batch(use_topk=False):
 
 
 if __name__ == "__main__":
-  print("\nUsing quantile for Pruning:")
-  prun_quant_kv_TRY_batch()
-  print("\nUsing Topk for Pruning:")
-  prun_quant_kv_TRY_batch(True)
+  print("\nUsing unstructure for Pruning:")
+  INT8_ChannelPrune_Quant_TRY_batch()
+

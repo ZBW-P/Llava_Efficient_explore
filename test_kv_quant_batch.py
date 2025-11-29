@@ -9,7 +9,7 @@ MODEL_ID = "llava-hf/llava-1.5-7b-hf"
 SAMPLE_PROMPT = "USER: <image>\nDescribe this image in detail.\nASSISTANT:"
 
 
-def Quan_kv_TRY_batch():
+def Quan_kv_TRY_batch(use_topk=False):
     print("Loading sample image...")
     image = load_sample_image()
     print(f"Image size: {image.size}")
@@ -41,20 +41,24 @@ def Quan_kv_TRY_batch():
         processor,
         maxbatchsize=32,
         method="tensorwise",
-        kv_bits=8,batch_sizes=(4, 8, 16, 32),
-        pruning_ratio=0.7,use_kv_quant=True,use_prun=False
+        kv_bits=8,
+        pruning_ratio=0.7,use_kv_quant=True,use_prun=False,
+        use_topk=use_topk,
     )
 
     print("\nTensor-wise KV Quantization Batch Results:")
     for bs, r in batch_results.items():
         print(
             f"  BS={bs}: "
-            f"Latency={r['latency']:.3f}s, "
+            f"Latency={r['total_time']:.3f}s, "
             f"Throughput={r['throughput']:.2f} tok/s, "
-            f"Memory={r['memory']:.2f} GB"
+            f"Memory={r['peak_memory_gb']:.2f} GB"
         )
     print()
 
 
 if __name__ == "__main__":
-    Quan_kv_TRY_batch()
+  print("\nUsing quantile for Pruning:")
+  Quan_kv_TRY_batch()
+  print("\nUsing Topk for Pruning:")
+  Quan_kv_TRY_batch(True)

@@ -9,7 +9,7 @@ MODEL_ID = "llava-hf/llava-1.5-7b-hf"
 SAMPLE_PROMPT = "USER: <image>\nDescribe this image in detail.\nASSISTANT:"
 
 
-def kv_TRY_batch():
+def kv_TRY_batch(use_topk=False):
     print("Loading sample image...")
     image = load_sample_image()
     print(f"Image size: {image.size}")
@@ -35,24 +35,29 @@ def kv_TRY_batch():
     )
     print("Model loaded.\n")
 
-    # 🔥 Baseline KV cache batch test (no prune, no quant)
+    # Baseline KV cache batch test (no prune, no quant)
     batch_results = run_all_stress_tests(
         model,
         processor,
         maxbatchsize=32,
         method="tensorwise",
+        use_topk=use_topk,
     )
 
     print("\nBaseline KV Cache Batch Results:")
     for bs, r in batch_results.items():
         print(
             f"  BS={bs}: "
-            f"Latency={r['latency']:.3f}s, "
+            f"Latency={r['total_time']:.3f}s, "
             f"Throughput={r['throughput']:.2f} tok/s, "
-            f"Memory={r['memory']:.2f} GB"
+            f"Memory={r['peak_memory_gb']:.2f} GB"
         )
     print()
 
 
 if __name__ == "__main__":
-    kv_TRY_batch()
+  print("\nUsing quantile for Pruning:")
+  kv_TRY_batch()
+
+  print("\nUsing Topk for Pruning:")
+  kv_TRY_batch(True)
