@@ -49,8 +49,9 @@ def AWQ_TRY():
     recipe = [
         SmoothQuantModifier(smoothing_strength=0.5),
         GPTQModifier(
-            targets=["q_proj", "k_proj", "v_proj", "o_proj"],
+            targets="Linear",
             scheme="W4A16",
+            sequential_targets=["LlamaDecoderLayer"],
             ignore=[
                 "re:.*lm_head",
                 "re:.*multi_modal_projector.*",
@@ -69,7 +70,7 @@ def AWQ_TRY():
         num_calibration_samples=NUM_CALIBRATION_SAMPLES,
         trust_remote_code_model=True,
         data_collator=data_collator,
-        sequential_targets=["LlamaDecoderLayer"],
+        # sequential_targets=["LlamaDecoderLayer"],
         output_dir="llava-1.5-7b-INT8",
     )
 
@@ -85,14 +86,10 @@ def run_test(image):
 
     model = LlavaForConditionalGeneration.from_pretrained(
         "llava-1.5-7b-INT8",
-        torch_dtype=torch.float16,
-        device_map="auto",
-        attn_implementation="flash_attention_2",
+        torch_dtype="auto",
     )
 
     dispatch_for_generation(model)
-
-    torch.set_default_tensor_type(torch.cuda.HalfTensor)
 
     processor = AutoProcessor.from_pretrained(MODEL_ID)
 
