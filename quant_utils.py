@@ -11,7 +11,6 @@ def dequantize_int8(q_x: torch.Tensor, scale: torch.Tensor):
 def quantize_int8(x: torch.Tensor, bits: int = 8):
     """
     Quantize tensor into int8 using symmetric quantization.
-    bits must be 1~8. Default = 8-bit.
     """
     assert 1 <= bits <= 8
     qmin = -(2 ** (bits - 1))

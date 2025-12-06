@@ -1,11 +1,10 @@
 import torch
 # ========================================================
-# Original Element-Wise Pruning (Unstructured) save based on larger amount of zeroes
+# Element-Wise Pruning (Unstructured) save based on larger amount of zeroes
 # ========================================================
 def Pruning(kv_cache, pruning_ratio: float):
     """
-    Original element-wise magnitude pruning (unstructured).
-    Keep your original behavior unchanged.
+    element-wise magnitude pruning (unstructured).
     """
     pruned_cache = []
     for k, v in kv_cache:
@@ -27,8 +26,7 @@ def Pruning(kv_cache, pruning_ratio: float):
 
 def Pruning_topk(kv_cache, pruning_ratio: float):
     """
-    Original element-wise magnitude pruning (unstructured).
-    Keep your original behavior unchanged.
+    element-wise magnitude pruning (unstructured).
     """
     pruned_cache = []
     for k, v in kv_cache:
@@ -57,6 +55,9 @@ def Pruning_topk(kv_cache, pruning_ratio: float):
 # ========================================================
 
 def prune_kv_channels(kv_cache, pruning_ratio: float):
+    """
+    Channel-wise magnitude pruning (structured).
+    """
     pruned_cache = []
 
     for k, v in kv_cache:
@@ -73,14 +74,10 @@ def prune_kv_channels(kv_cache, pruning_ratio: float):
 
         # Combined magnitude importance per channel
         channel_importance = k_norm + v_norm
-
-        # Compute pruning threshold
         threshold = torch.quantile(channel_importance, pruning_ratio)
 
-        # Keep channels whose importance >= threshold
-        keep_mask = (channel_importance >= threshold).to(k.device)  # shape (D,)
-
-        # Reshape for broadcast: (1,1,1,D)
+        # Create mask for channels to keep
+        keep_mask = (channel_importance >= threshold).to(k.device)
         mask = keep_mask[None, None, None, :]
 
         # Apply structured pruning

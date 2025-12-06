@@ -17,7 +17,7 @@ MODEL_ID = "llava-hf/llava-1.5-7b-hf"
 
 
 # ----------------------------------------
-#   Your Original AWQ Quantization Setup
+#   AWQ Quantization Setup
 # ----------------------------------------
 
 def data_collator(batch):
@@ -78,7 +78,7 @@ def AWQ_TRY():
 
 
 # ----------------------------------------
-#   Run Benchmark After Quantization
+#   Run Benchmark
 # ----------------------------------------
 
 def run_test(image):
@@ -113,7 +113,7 @@ if __name__ == "__main__":
     print(f"Image size: {image.size}\n")
 
     # If you want to run quantization:
-    # AWQ_TRY()
+    AWQ_TRY()
 
     # Now run test on already-quantized model
     run_test(image)
