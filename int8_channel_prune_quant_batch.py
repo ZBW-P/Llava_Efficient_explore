@@ -11,7 +11,7 @@ MODEL_ID = "llava-hf/llava-1.5-7b-hf"
 SAMPLE_PROMPT = "USER: <image>\nDescribe this image in detail.\nASSISTANT:"
 
 
-def INT8_ChannelPrune_Quant_TRY_batch(use_structure_prun=False):
+def INT8_ChannelPrune_Quant_TRY_batch(use_structure_prun=False,use_kv_quant=True):
     """
     Method 2:
     Bitsandbytes INT8 + channel-wise KV pruning + KV cache fake quantization (Batch Test).
@@ -46,7 +46,7 @@ def INT8_ChannelPrune_Quant_TRY_batch(use_structure_prun=False):
         method="channelwise",
         kv_bits=8,
         pruning_ratio=0.7,
-        use_kv_quant=True,
+        use_kv_quant=use_kv_quant,
         use_prun=True,
         use_structure_prun=use_structure_prun,
     )
@@ -65,4 +65,6 @@ def INT8_ChannelPrune_Quant_TRY_batch(use_structure_prun=False):
 if __name__ == "__main__":
   print("\nUsing unstructure for Pruning:")
   INT8_ChannelPrune_Quant_TRY_batch()
+  print("\ndisable quantization for Pruning:")
+  INT8_ChannelPrune_Quant_TRY_batch(use_kv_quant=False)
 

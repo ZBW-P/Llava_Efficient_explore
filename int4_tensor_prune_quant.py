@@ -10,7 +10,7 @@ MODEL_ID = "llava-hf/llava-1.5-7b-hf"
 SAMPLE_PROMPT = "USER: <image>\nDescribe this image in detail.\nASSISTANT:"
 
 
-def INT4_TensorPrune_Quant_TRY():
+def INT4_TensorPrune_Quant_TRY(use_kv_quant=True,use_prun=True):
 
     print("Loading sample image...")
     image = load_sample_image()
@@ -44,9 +44,9 @@ def INT4_TensorPrune_Quant_TRY():
         image,
         SAMPLE_PROMPT,
         num_runs=3,
-        use_kv_quant=True,
+        use_kv_quant=use_kv_quant,
         kv_bits=8,
-        use_prun=True,
+        use_prun=use_prun,
         pruning=0.7,
     )
 
@@ -58,4 +58,7 @@ def INT4_TensorPrune_Quant_TRY():
 
 
 if __name__ == "__main__":
-    INT4_TensorPrune_Quant_TRY()
+    print("quant only")
+    INT4_TensorPrune_Quant_TRY(use_prun=False)
+    print("Pruning only")
+    INT4_TensorPrune_Quant_TRY(use_kv_quant=False)

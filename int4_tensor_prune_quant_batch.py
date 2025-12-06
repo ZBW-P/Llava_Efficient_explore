@@ -10,7 +10,7 @@ MODEL_ID = "llava-hf/llava-1.5-7b-hf"
 SAMPLE_PROMPT = "USER: <image>\nDescribe this image in detail.\nASSISTANT:"
 
 
-def INT4_TensorPrune_Quant_TRY_batch(use_topk=False):
+def INT4_TensorPrune_Quant_TRY_batch(use_topk=False,use_kv_quant=True):
 
     try:
         del model, processor
@@ -40,7 +40,7 @@ def INT4_TensorPrune_Quant_TRY_batch(use_topk=False):
         method="tensorwise",
         kv_bits=8,
         pruning_ratio=0.7,
-        use_kv_quant=True,
+        use_kv_quant=use_kv_quant,
         use_prun=True,
         use_topk=use_topk, 
     )
@@ -61,3 +61,5 @@ if __name__ == "__main__":
   INT4_TensorPrune_Quant_TRY_batch()
   print("\nUsing Topk for Pruning:")
   INT4_TensorPrune_Quant_TRY_batch(True)
+  print("\nDisable quantization for KV cache:")
+  INT4_TensorPrune_Quant_TRY_batch(True, use_kv_quant=False)

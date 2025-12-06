@@ -56,8 +56,5 @@ def kv_TRY_batch(use_topk=False):
 
 
 if __name__ == "__main__":
-  print("\nUsing quantile for Pruning:")
+  print("\nUsing kv cache:")
   kv_TRY_batch()
-
-  print("\nUsing Topk for Pruning:")
-  kv_TRY_batch(True)

@@ -12,7 +12,7 @@ from benchmark_utils import benchmark_channelwise
 MODEL_ID = "llava-hf/llava-1.5-7b-hf"
 SAMPLE_PROMPT = "USER: <image>\nDescribe this image in detail.\nASSISTANT:"
 
-def INT4_ChannelPrune_Quant_TRY():
+def INT4_ChannelPrune_Quant_TRY(use_kv_quant=True):
     """
     Method 2:
     Bitsandbytes INT4 + channel-wise KV pruning + KV cache fake quantization.
@@ -48,8 +48,8 @@ def INT4_ChannelPrune_Quant_TRY():
         image,
         SAMPLE_PROMPT,
         num_runs=3,
-        pruning_ratio=0.3,
-        use_kv_quant=True,
+        pruning_ratio=0.5,
+        use_kv_quant=use_kv_quant,
         kv_bits=8,
     )
 
@@ -61,4 +61,7 @@ def INT4_ChannelPrune_Quant_TRY():
 
 
 if __name__ == "__main__":
+    print("enable quant")
     INT4_ChannelPrune_Quant_TRY()
+    print("disable quant")
+    INT4_ChannelPrune_Quant_TRY(use_kv_quant=False)

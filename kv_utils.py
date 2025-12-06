@@ -53,7 +53,7 @@ def Pruning_topk(kv_cache, pruning_ratio: float):
 
     return tuple(pruned_cache)
 # ========================================================
-# Channel-Wise Pruning save based on larger amount of zeroes
+# Channel-Wise Pruning masked
 # ========================================================
 
 def prune_kv_channels(kv_cache, pruning_ratio: float):
@@ -67,9 +67,9 @@ def prune_kv_channels(kv_cache, pruning_ratio: float):
         k_flat = k.view(-1, D).float()
         v_flat = v.view(-1, D).float()
 
-        # L2 norm of each channel (D channels)
-        k_norm = torch.norm(k_flat, dim=0)   # (D,)
-        v_norm = torch.norm(v_flat, dim=0)   # (D,)
+        # L2 norm of each channel
+        k_norm = torch.norm(k_flat, dim=0)
+        v_norm = torch.norm(v_flat, dim=0)
 
         # Combined magnitude importance per channel
         channel_importance = k_norm + v_norm
@@ -86,35 +86,6 @@ def prune_kv_channels(kv_cache, pruning_ratio: float):
         # Apply structured pruning
         k_pruned = k * mask
         v_pruned = v * mask
-
-        pruned_cache.append((k_pruned, v_pruned))
-
-    return tuple(pruned_cache)
-
-
-########################################################
-# Channel-Wise Pruning with Dimension Reduction different from above save in dimension
-########################################################
-def prune_kv_channels_structure(kv_cache, pruning_ratio: float):
-    pruned_cache = []
-
-    for k, v in kv_cache:
-        D = k.shape[-1]
-
-        k_flat = k.view(-1, D).float()
-        v_flat = v.view(-1, D).float()
-
-        k_norm = torch.norm(k_flat, dim=0)
-        v_norm = torch.norm(v_flat, dim=0)
-
-        importance = k_norm + v_norm
-
-        threshold = torch.quantile(importance, pruning_ratio)
-        keep_mask = importance >= threshold
-
-        # True pruning: reduce D dimension
-        k_pruned = k[:, :, :, keep_mask]
-        v_pruned = v[:, :, :, keep_mask]
 
         pruned_cache.append((k_pruned, v_pruned))
 

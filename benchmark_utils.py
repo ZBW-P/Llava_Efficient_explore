@@ -2,7 +2,7 @@ from pyexpat import model
 import time
 from image_utils import load_images_from_urls,load_sample_image
 import torch
-
+from transformers.cache_utils import DynamicCache
 from memory_utils import clear_memory, get_memory_usage
 from quant_utils import quantize_int8, dequantize_int8
 from kv_utils import Pruning,Pruning_topk
@@ -142,6 +142,7 @@ def benchmark_model_quant(model, processor, image, num_runs=3):
 #   KV CACHE PRUNE / KV CACHE QUANT / MIXED TEST
 # -----------------------------------------------------------
 
+
 def run_inference_quan_prun(
     model,
     processor,
@@ -153,17 +154,22 @@ def run_inference_quan_prun(
     use_prun=False,
     pruning=0.0,
     bs=1,
-    use_topk=False
+    use_topk=False,
+    image_prun=False,
 ):
     clear_memory()
+    if not isinstance(image, (list, tuple)):
+        image = [image]
 
-    inputs = processor(text=[prompt] * len(image), images=image, return_tensors="pt").to(model.device)
+    texts = [prompt] * len(image)
+
+    inputs = processor(text=texts, images=image, return_tensors="pt").to(model.device)
 
     # PREFILL phase: obtain KV cache
     with torch.no_grad():
         output = model(**inputs, max_new_tokens=max_tokens, use_cache=True)
     kv_cache = output.past_key_values
-
+    
     # KV PRUNING (if enabled)
     if use_prun:
       if use_topk:
@@ -194,12 +200,13 @@ def run_inference_quan_prun(
 
     # GENERATION using pruned/quantized KV
     start_time = time.time()
+
     gen_out = model.generate(
-        **inputs,
-        max_new_tokens=max_tokens,
-        use_cache=True,
-        past_key_values=kv_cache,
-        cache_position=cache_position,
+      **inputs,
+      max_new_tokens=max_tokens,
+      use_cache=True,
+      past_key_values=kv_cache,
+      cache_position=cache_position,
     )
     end_time = time.time()
 
@@ -227,7 +234,8 @@ def benchmark_model_q_p(
     use_kv_quant=False,
     kv_bits=8,
     use_prun=False,
-    pruning=0.0
+    pruning=0.0,
+    use_topk=False
 ):
     results = []
 
@@ -243,7 +251,8 @@ def benchmark_model_q_p(
             kv_bits=kv_bits,
             use_prun=use_prun,
             pruning=pruning,
-            bs=1
+            bs=1,
+            use_topk=use_topk
         )
         results.append(result)
 
@@ -283,8 +292,12 @@ def run_inference_channelwise(
 ):
 
     clear_memory()
+    if not isinstance(image, (list, tuple)):
+        image = [image]
 
-    inputs = processor(text=[prompt] * len(image), images=image, return_tensors="pt").to(model.device)
+    texts = [prompt] * len(image)
+
+    inputs = processor(text=texts, images=image, return_tensors="pt").to(model.device)
 
     # 1) Prefill: get KV cache
     with torch.no_grad():

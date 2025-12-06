@@ -9,7 +9,7 @@ MODEL_ID = "llava-hf/llava-1.5-7b-hf"
 SAMPLE_PROMPT = "USER: <image>\nDescribe this image in detail.\nASSISTANT:"
 
 
-def Quan_kv_TRY_batch(use_topk=False):
+def Quan_kv_TRY_batch(use_topk=False,use_kv_quant=True):
     print("Loading sample image...")
     image = load_sample_image()
     print(f"Image size: {image.size}")
@@ -30,19 +30,20 @@ def Quan_kv_TRY_batch(use_topk=False):
     processor = AutoProcessor.from_pretrained(MODEL_ID)
     model = LlavaForConditionalGeneration.from_pretrained(
         MODEL_ID,
+        device_map="auto",
+        load_in_8bit=True,
         torch_dtype=torch.float16,
-        device_map="auto"
     )
     print("Model loaded.\n")
 
-    # 🔥 Run batch test with tensor-wise quantization only
+    # Run batch test with tensor-wise quantization only
     batch_results = run_all_stress_tests(
         model,
         processor,
         maxbatchsize=32,
         method="tensorwise",
         kv_bits=8,
-        pruning_ratio=0.7,use_kv_quant=True,use_prun=False,
+        pruning_ratio=0.7,use_kv_quant=use_kv_quant,use_prun=False,
         use_topk=use_topk,
     )
 
@@ -61,4 +62,6 @@ if __name__ == "__main__":
   print("\nUsing quantile for Pruning:")
   Quan_kv_TRY_batch()
   print("\nUsing Topk for Pruning:")
-  Quan_kv_TRY_batch(True)
+  Quan_kv_TRY_batch(use_topk=True)
+  print("\nDisable quantization for KV cache:")
+  Quan_kv_TRY_batch(use_kv_quant=False)

@@ -9,11 +9,17 @@ MODEL_ID = "llava-hf/llava-1.5-7b-hf"
 SAMPLE_PROMPT = "USER: <image>\nDescribe this image in detail.\nASSISTANT:"
 
 
-def prun_kv_TRY():
-    print("Loading sample image...")
-    image = load_sample_image()
-    print(f"Image size: {image.size}")
-    print()
+def prun_kv_TRY(URL=None,use_topk=False):
+    if URL:
+      print("Loading sample image...")
+      image = load_sample_image(URL)
+      print(f"Image size: {image.size}")
+      print()
+    else:
+      print("Loading sample image...")
+      image = load_sample_image()
+      print(f"Image size: {image.size}")
+      print()
 
     try:
         del model, processor
@@ -46,7 +52,8 @@ def prun_kv_TRY():
         use_kv_quant=False,
         kv_bits=8,
         use_prun=True,
-        pruning=0.7
+        pruning=0.7,
+        use_topk=use_topk
     )
 
     print("\nPrun_kv_cacheresults Results:")
@@ -58,3 +65,6 @@ def prun_kv_TRY():
 
 if __name__ == "__main__":
     prun_kv_TRY()
+    CAT_URL = "https://github.com/ZBW-P/Llava_Efficient_explore/blob/main/breed_abyssinian_cat.jpg?raw=1"
+    prun_kv_TRY(CAT_URL)
+    prun_kv_TRY(CAT_URL,use_topk=True)
