@@ -86,54 +86,66 @@ All experiments in this repository can be executed using simple Python commands.
 Commands are grouped by the optimization technique.
 
 A. Baseline
+```bash
 python test_baseline.py
 python test_baseline_batch.py
 
 B. FlashAttention 2
+```bash
 python test_flash_attn.py
 python test_flash_attn_batch.py
 
 C. Bitsandbytes Quantization (INT8 / INT4)
+```bash
 python test_bitsandbytes.py
 python test_bitsandbytes_batch.py
 
 D. KV Cache Baseline
+```bash
 python test_kv.py
 python test_kv_batch.py
 
 E. KV Cache Pruning
 Single-image
+```bash
 python test_kv_prune.py
 python test_kv_prune_quant.py
 python test_kv_quant.py
 
 Batch experiments
+```bash
 python test_kv_prune_batch.py
 python test_kv_prune_quant_batch.py
 python test_kv_quant_batch.py
 
 F. Tensor-wise Pruning / Quantization
 INT8
+```bash
 python int8_tensor_prune_quant.py
 python int8_tensor_prune_quant_batch.py
 
 INT4
+```bash
 python int4_tensor_prune_quant.py
 python int4_tensor_prune_quant_batch.py
 
 G. Channel-wise Pruning / Quantization
 INT4
+```bash
 python int4_channel_prune_quant.py
 python int4_channel_prune_quant_batch.py
 
 INT8
+```bash
 python int8_channel_prune_quant_batch.py
 
 FP16 pruning
+```bash
 python channel_prune_quant.py
 python channel_prune_quant_batch.py
 
 H. AWQ (llmcompressor)
+```bash
 python test_llmcompressor_awq.py
 python test_llmcompressor_awq_vllm.py
 
