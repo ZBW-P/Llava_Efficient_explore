@@ -82,8 +82,7 @@ This structure ensures the full pipeline—from preprocessing to pruning to benc
 
 ## 4. Example Commands to Execute the Code
 
-All experiments in this repository can be executed using simple Python commands.
-Commands are grouped by the optimization technique.
+All experiments in this repository can be executed using simple Python commands. Example can be seen from three jupyter notebook: Experiment_Default.ipynb Experiment_L4.ipynb Experiment_A100.ipynb
 
 A. Baseline
 ```bash
@@ -149,9 +148,5 @@ H. AWQ (llmcompressor)
 python test_llmcompressor_awq.py
 python test_llmcompressor_awq_vllm.py
 ```
-I. Jupyter Notebook Experiments
-Experiment_Default.ipynb
-Experiment_L4.ipynb
-Experiment_A100.ipynb
 
 
