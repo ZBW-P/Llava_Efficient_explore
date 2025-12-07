@@ -89,7 +89,7 @@ A. Baseline
 ```bash
 python test_baseline.py
 python test_baseline_batch.py
-
+```
 B. FlashAttention 2
 ```bash
 python test_flash_attn.py
