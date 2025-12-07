@@ -82,7 +82,7 @@ This structure ensures the full pipeline—from preprocessing to pruning to benc
 
 ## 4. Example Commands to Execute the Code
 
-All experiments in this repository can be executed using simple Python commands. Example can be seen from three jupyter notebook: Experiment_Default.ipynb Experiment_L4.ipynb Experiment_A100.ipynb
+All experiments in this repository can be executed using simple Python commands. Execution examples can be seen from three jupyter notebooks: Experiment_Default.ipynb Experiment_L4.ipynb Experiment_A100.ipynb
 
 A. Baseline
 ```bash
