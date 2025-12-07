@@ -206,21 +206,9 @@ To keep the README concise and readable, we provide **category-level result tabl
 | INT4 Channel-wise | ~104 | ~105 | **5.05 GB** |
 
 ➡ **INT4 KV leads to >60% memory savings with minimal speed loss.**
-
 ---
 
-### 5.3 Combined Prune + Quant
-
-| Method | L4 TPS | A100 TPS | Notes |
-|--------|--------|-----------|-------|
-| Tensorwise prune+quant | ~362 | ~643 | BS=4 only |
-| Quantile / Top-K prune+quant | Good TPS | OOM on L4 for large BS | Tradeoff between sparsity and memory |
-
-➡ Hybrid prune+quant gives **balanced speed + memory benefit**.
-
----
-
-### 5.4 Batch Inference Summary (BS = 4, 8, 16, 32)
+### 5.3 Batch Inference Summary (BS = 4, 8, 16, 32)
 
 #### **Baseline Batch**
 | GPU | Max TPS |
@@ -255,7 +243,7 @@ Throughput increases with batch size but remains **consistently below baseline**
 
 ---
 
-## 5.5 Summary of Main Results
+## 5.4 Summary of Main Results
 
 #### ✅ **1. KV cache is the dominant factor influencing decoding speed.**  
 Reusing KV boosts throughput from **15 → 160 tok/s** (L4) and **22 → 161 tok/s** (A100).  
@@ -304,7 +292,7 @@ No other method matches this jump.
 
 ---
 
-## 5.6 Final Observation
+## 5.5 Final Observation
 
 Across all experiments:
 
