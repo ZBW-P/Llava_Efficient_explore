@@ -206,6 +206,7 @@ To keep the README concise and readable, we provide **category-level result tabl
 | INT4 Channel-wise | ~104 | ~105 | **5.05 GB** |
 
 ➡ **INT4 KV leads to >60% memory savings with minimal speed loss.**
+
 ---
 
 ### 5.3 Batch Inference Summary (BS = 4, 8, 16, 32)
