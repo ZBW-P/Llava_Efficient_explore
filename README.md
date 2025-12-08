@@ -259,7 +259,7 @@ Full raw tables are available in the notebooks and test scripts.
   - BS ≥ 8 on L4  
 - This is expected because magnitude-based channel removal can break head balance.
 
-➡ **Best method for large-batch, high-throughput production inference.**
+➡ **Best method for large-batch, high-throughput production inference. However magnitude pruning method it self is unstable to find the useless channels, so the fluctuant of throughputs happens in this test of channel-wise pruning.**
 
 ---
 
