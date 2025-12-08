@@ -165,7 +165,7 @@ Full raw tables are available in the notebooks and test scripts.
 |--------|--------|-----------|--------|--------|
 | Baseline | 15.07 | 22.05 | 13.52 GB | Default reference |
 | FlashAttention 2 | 13.63 | 20.41 | 13.52 GB | Slight slowdown |
-| bitsandbytes INT8/INT4 | 13–15 | ~15 | **4.69 GB** | Large memory ↓, speed ↓ |
+| bitsandbytes INT8/INT4 | 13–15 | ~15 | **4.69 GB** | Peak memory ↓, speed ↓ |
 
 ➡ *FlashAttention gives minimal benefit; bitsandbytes saves memory but hurts speed.*
 
