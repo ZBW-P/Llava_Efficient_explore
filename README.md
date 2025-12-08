@@ -150,14 +150,12 @@ python test_llmcompressor_awq_vllm.py
 ```
 ## 5. Results and Observations
 
-This section provides a clean, concise, and readable summary of the **single-image** and **batch inference** results, along with key performance observations.  
-All tables below are based on the full raw dataset collected from every `test_*.py` script in the repository.
-
+This section summarizes the performance of all acceleration methods tested on both **NVIDIA L4** and **A100** GPUs. To keep the README concise and readable, we provide **category-level result tables** and **clear observations**, while full raw tables remain available inside the notebook and test scripts.
 ---
 
-## 5.1 Single-Image Inference (BS = 1)
+### 5.1 Single-Image Inference (BS = 1)
 
-### **Baseline vs FlashAttention vs bitsandbytes**
+#### **Baseline vs FlashAttention vs bitsandbytes**
 | Method | L4 TPS | A100 TPS | Memory | Notes |
 |--------|--------|-----------|--------|--------|
 | Baseline | 15.07 | 22.05 | 13.52 GB | Default reference |
@@ -168,7 +166,10 @@ All tables below are based on the full raw dataset collected from every `test_*.
 
 ---
 
-### **KV Cache Baseline**
+
+### 5.2 KV Cache and KV-Based Optimizations
+
+#### **KV Cache Baseline**
 | GPU | Throughput | Memory |
 |-----|------------|--------|
 | L4 | **107.69 tok/s** | 13.55 GB |
@@ -178,7 +179,7 @@ All tables below are based on the full raw dataset collected from every `test_*.
 
 ---
 
-### **Tensor-wise KV Pruning (Best for BS=1)**
+#### **Tensor-wise KV Pruning (Best for BS=1)**
 | GPU | TPS | Memory |
 |------|------|--------|
 | L4 | **204.33 tok/s** | 14.11 GB |
@@ -188,7 +189,7 @@ All tables below are based on the full raw dataset collected from every `test_*.
 
 ---
 
-### **Channel-wise KV Pruning (Stable & Strong for BS=1)**
+#### **Channel-wise KV Pruning (Stable & Strong for BS=1)**
 | Variant | L4 TPS | A100 TPS |
 |---------|--------|-----------|
 | Prune only | 130.82 | 195.93 |
@@ -198,7 +199,7 @@ All tables below are based on the full raw dataset collected from every `test_*.
 
 ---
 
-### **INT4 / INT8 KV Quantization (Fake Quant)**
+#### **INT4 / INT8 KV Quantization (Fake Quant)**
 | Method | L4 TPS | A100 TPS | Memory |
 |--------|--------|-----------|---------|
 | INT4 Tensor-wise | ~106 | ~104 | **5.05 GB** |
@@ -209,9 +210,9 @@ All tables below are based on the full raw dataset collected from every `test_*.
 
 ---
 
-## 5.2 Batch Inference (BS = 4, 8, 16, 32)
+### 5.2 Batch Inference (BS = 4, 8, 16, 32)
 
-### **Baseline Batch**
+#### **Baseline Batch**
 | GPU | Max TPS |
 |------|---------|
 | A100 | **3730 tok/s (BS=32)** |
