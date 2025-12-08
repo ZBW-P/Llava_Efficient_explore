@@ -203,7 +203,7 @@ Full raw tables are available in the notebooks and test scripts.
 
 ---
 
-#### **KV Fake Quantization (INT4 / INT8)**
+#### **Model Fake Quantization (INT4 / INT8)**
 | Method | L4 TPS | A100 TPS | Memory |
 |--------|--------|-----------|---------|
 | INT4 Tensor-wise | ~106 | ~104 | **5.05 GB** |
@@ -263,7 +263,7 @@ Full raw tables are available in the notebooks and test scripts.
 
 ---
 
-### **Tensor-Wise Pruning (Batch Mode)**
+#### **Tensor-Wise Pruning (Batch Mode)**
 - Only BS=4 is stable.
 - BS ≥ 8 → OOM on both L4 and A100.
 - Throughput much lower than channel-wise pruning.
@@ -272,7 +272,8 @@ Full raw tables are available in the notebooks and test scripts.
 
 ---
 
-### **INT4 / INT8 Pruning + Quantization (Batch Mode)**
+
+### **INT4 / INT8 Quantization + Pruning (Batch Mode)**
 General trends across `int4_*_batch.py` and `int8_*_batch.py`:
 
 - Big **memory savings (30–70%)**.
@@ -284,51 +285,6 @@ General trends across `int4_*_batch.py` and `int8_*_batch.py`:
 
 ---
 
-## 6. Summary of Main Results
+## 6. Summary
 
-#### 1. KV Cache Is the Most Important Speedup Factor  
-- **15 → 108 tok/s (L4)**  
-- **22 → 161 tok/s (A100)**  
-Everything else builds on top of KV reuse.
-
----
-
-#### 2. Tensor-Wise Pruning Is Best for BS=1  
-- **Fastest single-image inference** (204–310 tok/s).  
-- Outperforms every other optimization.
-
----
-
-#### 3. Channel-Wise Pruning Is Best for Batch Inference  
-- **6818.94 tok/s @ BS=16 (A100)** — highest in the project.  
-- But unstable at BS ≥ 32 due to aggressive channel removal.  
-- L4 hits memory constraints early.
-
----
-
-#### 4. INT4 KV Quantization Gives the Best Memory Savings  
-- **13.5 GB → 5.0 GB**  
-- Small throughput drop  
-- Ideal for mid-tier GPUs (L4 / T4 / RTX)
-
----
-
-#### 5. bitsandbytes Weight Quantization Is Not Suitable for LLaVA  
-- Slows decoding  
-- Sometimes unstable  
-- Only good for reducing model weights
-
----
-
-#### 6. FlashAttention Gives Minor Gains  
-- Small latency improvement  
-- No significant throughput gains
-
----
-
-#### 7. Hybrid KV Prune + KV Quant Is the Best Trade-off  
-- Good throughput  
-- Strong memory savings  
-- Works well at BS = 4–8
-
----
+In this project, we conducted a systematic and practical exploration of acceleration methods for LLaVA, benchmarking baseline performance, FlashAttention, bitsandbytes quantization, KV caching, multiple KV pruning strategies, and low-bit fake quantization across both NVIDIA L4 and A100 GPUs. Through extensive single-image and batch-size experiments, we evaluated latency, throughput, and memory usage under realistic deployment constraints and identified the most effective techniques for different inference scenarios. Our findings highlight the importance of KV reuse, the strengths and limitations of tensor-wise and channel-wise pruning, and the trade-offs introduced by INT4/INT8 quantization. Overall, this work provides a clear and actionable understanding of how various optimization strategies behave in practice, offering guidance for deploying efficient multimodal LLM inference in real-world systems.
