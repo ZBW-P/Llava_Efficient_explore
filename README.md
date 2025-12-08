@@ -255,7 +255,7 @@ Channel-wise pruning shows the strongest batch performance:
 - **Outperforms KV cache** in batch efficiency.
 - **Not stable for large BS** (BS ≥ 32 on A100; BS ≥ 8 on L4).
 
-**Why unstable? (Short explanation)**  
+**Possible explinations**  
 Magnitude-based channel removal is coarse: some channels look unimportant but actually support key heads.  
 Pruning them causes **fluctuating throughput** and **reduced stability**, especially at larger batch sizes.
 
