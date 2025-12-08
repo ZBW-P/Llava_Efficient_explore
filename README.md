@@ -286,47 +286,47 @@ General trends across `int4_*_batch.py` and `int8_*_batch.py`:
 
 # 6. Summary of Main Results
 
-### ✅ 1. KV Cache Is the Most Important Speedup Factor  
+### 1. KV Cache Is the Most Important Speedup Factor  
 - **15 → 108 tok/s (L4)**  
 - **22 → 161 tok/s (A100)**  
 Everything else builds on top of KV reuse.
 
 ---
 
-### ✅ 2. Tensor-Wise Pruning Is Best for BS=1  
+### 2. Tensor-Wise Pruning Is Best for BS=1  
 - **Fastest single-image inference** (204–310 tok/s).  
 - Outperforms every other optimization.
 
 ---
 
-### ✅ 3. Channel-Wise Pruning Is Best for Batch Inference  
+### 3. Channel-Wise Pruning Is Best for Batch Inference  
 - **6818.94 tok/s @ BS=16 (A100)** — highest in the project.  
 - But unstable at BS ≥ 32 due to aggressive channel removal.  
 - L4 hits memory constraints early.
 
 ---
 
-### ✅ 4. INT4 KV Quantization Gives the Best Memory Savings  
+### 4. INT4 KV Quantization Gives the Best Memory Savings  
 - **13.5 GB → 5.0 GB**  
 - Small throughput drop  
 - Ideal for mid-tier GPUs (L4 / T4 / RTX)
 
 ---
 
-### ✅ 5. bitsandbytes Weight Quantization Is Not Suitable for LLaVA  
+### 5. bitsandbytes Weight Quantization Is Not Suitable for LLaVA  
 - Slows decoding  
 - Sometimes unstable  
 - Only good for reducing model weights
 
 ---
 
-### ✅ 6. FlashAttention Gives Minor Gains  
+### 6. FlashAttention Gives Minor Gains  
 - Small latency improvement  
 - No significant throughput gains
 
 ---
 
-### ✅ 7. Hybrid KV Prune + KV Quant Is the Best Trade-off  
+### 7. Hybrid KV Prune + KV Quant Is the Best Trade-off  
 - Good throughput  
 - Strong memory savings  
 - Works well at BS = 4–8
