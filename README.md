@@ -241,25 +241,25 @@ Full raw tables are available in the notebooks and test scripts.
 
 ### 5.4 Channel-Wise vs Tensor-Wise Pruning in Batch Mode
 
-#### **Channel-Wise Pruning — Most Important Batch Finding**
-(from `channel_prune_quant_batch.py`, prune-only)
+Channel-wise pruning shows the strongest batch performance:
 
 | BS | L4 TPS | A100 TPS |
 |----|--------|-----------|
-| 4  | 361.28 | 1724.47 |
-| 8  | OOM | 1234.43 |
-| 16 | OOM | **6818.94** |
-| 32 | OOM | 3457.34 |
+| 4  | 361.28 | 1724.47   |
+| 8  | OOM    | 1234.43   |
+| 16 | OOM    | **6818.94** |
+| 32 | OOM    | 3457.34   |
 
-#### Key Insights
-- **6818.94 tok/s @ BS=16** (A100) is the **highest throughput in the entire project**.  
-- Channel-wise pruning **outperforms KV cache baseline** in batch inference.  
-- However, it becomes **unstable** when:
-  - BS ≥ 32 on A100  
-  - BS ≥ 8 on L4  
-- This is expected because magnitude-based channel removal can break head balance.
+**Summary (Brief):**
+- **Highest throughput** in the entire project: **6818.94 tok/s @ BS=16 (A100)**.
+- **Outperforms KV cache** in batch efficiency.
+- **Not stable for large BS** (BS ≥ 32 on A100; BS ≥ 8 on L4).
 
-➡ **Best method for large-batch, high-throughput production inference. However magnitude pruning method it self is unstable to find the useless channels, so the fluctuant of throughputs happens in this test of channel-wise pruning.**
+**Why unstable? (Short explanation)**  
+Magnitude-based channel removal is coarse: some channels look unimportant but actually support key heads.  
+Pruning them causes **fluctuating throughput** and **reduced stability**, especially at larger batch sizes.
+
+➡ **Best choice for batch inference**, but inherently unstable due to heuristic (magnitude-only) pruning.
 
 ---
 
