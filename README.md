@@ -148,163 +148,175 @@ H. AWQ (llmcompressor)
 python test_llmcompressor_awq.py
 python test_llmcompressor_awq_vllm.py
 ```
-## 5. Results and observations 
+## 5. Results and Observations
 
-This section summarizes the performance of all acceleration methods tested on both **NVIDIA L4** and **A100** GPUs.  
-To keep the README concise and readable, we provide **category-level result tables** and **clear observations**, while full raw tables remain available inside the notebook and test scripts.
-
----
-
-### 5.1 Single-Image (BS = 1) Summary
-
-#### **Baseline vs FlashAttention vs bitsandbytes**
-| Method | L4 Throughput | A100 Throughput | Memory | Notes |
-|--------|---------------|------------------|--------|-------|
-| Baseline | 15 tok/s | 22 tok/s | 13.52 GB | Default reference |
-| FlashAttention 2 | 13.6 tok/s | 20.4 tok/s | 13.52 GB | Slightly slower; compute-bound |
-| bitsandbytes INT8/INT4 | ~14–15 tok/s | ~15 tok/s | **4.7 GB** | Memory ↓ but no speed gain |
-
-➡ *FlashAttention shows limited benefit for LLaVA; bitsandbytes reduces memory but slows decoding.*
+This section provides a clean, concise, and readable summary of the **single-image** and **batch inference** results, along with key performance observations.  
+All tables below are based on the full raw dataset collected from every `test_*.py` script in the repository.
 
 ---
 
-### 5.2 KV Cache and KV-Based Optimizations
+## 5.1 Single-Image Inference (BS = 1)
 
-#### **KV Cache Baseline**
+### **Baseline vs FlashAttention vs bitsandbytes**
+| Method | L4 TPS | A100 TPS | Memory | Notes |
+|--------|--------|-----------|--------|--------|
+| Baseline | 15.07 | 22.05 | 13.52 GB | Default reference |
+| FlashAttention 2 | 13.63 | 20.41 | 13.52 GB | Slight slowdown |
+| bitsandbytes INT8/INT4 | 13–15 | ~15 | **4.69 GB** | Memory↓, speed↓ |
+
+➡ **FlashAttention provides limited benefit** and bitsandbytes **reduces memory but does not improve throughput**.
+
+---
+
+### **KV Cache Baseline**
 | GPU | Throughput | Memory |
 |-----|------------|--------|
-| L4 | **107.7 tok/s** | 13.55 GB |
-| A100 | **161.4 tok/s** | 13.55 GB |
+| L4 | **107.69 tok/s** | 13.55 GB |
+| A100 | **161.41 tok/s** | 13.55 GB |
 
-➡ **KV cache reuse is the largest speedup factor—7× faster than baseline.**
-
----
-
-#### **Tensor-wise KV Pruning**
-| Variant | L4 TPS | A100 TPS | Memory |
-|---------|--------|-----------|---------|
-| Prune only | **204.3** | **309.9** | 14.11 GB |
-
-➡ The **fastest BS=1 method overall**, doubling throughput vs KV baseline.
+➡ KV cache reuse gives a **7× speedup**, the largest gain among all non-pruning techniques.
 
 ---
 
-#### **Channel-wise KV Pruning**
-| Variant | L4 TPS | A100 TPS | Memory |
-|---------|--------|-----------|---------|
-| Prune | 130.8 | 195.9 | 14.12 GB |
-| Quant | 130.7 | 196.7 | 14.28 GB |
+### **Tensor-wise KV Pruning (Best for BS=1)**
+| GPU | TPS | Memory |
+|------|------|--------|
+| L4 | **204.33 tok/s** | 14.11 GB |
+| A100 | **309.88 tok/s** | 14.11 GB |
 
-➡ Strong but slightly weaker than tensor-wise pruning for single-image inference.
+➡ **Fastest BS=1 method**, nearly doubling KV cache baseline performance.
 
 ---
 
-#### **KV Quantization (INT4 / INT8 Fake Quant)**
+### **Channel-wise KV Pruning (Stable & Strong for BS=1)**
+| Variant | L4 TPS | A100 TPS |
+|---------|--------|-----------|
+| Prune only | 130.82 | 195.93 |
+| Quant only | 130.69 | 196.71 |
+
+➡ Strong performance, but slightly weaker than tensor-wise pruning for BS=1.
+
+---
+
+### **INT4 / INT8 KV Quantization (Fake Quant)**
 | Method | L4 TPS | A100 TPS | Memory |
 |--------|--------|-----------|---------|
 | INT4 Tensor-wise | ~106 | ~104 | **5.05 GB** |
 | INT4 Channel-wise | ~104 | ~105 | **5.05 GB** |
 
-➡ **INT4 KV leads to >60% memory savings with minimal speed loss.**
+➡ **>60% memory reduction** with acceptable throughput loss.  
+➡ Ideal when memory is the main bottleneck (e.g., L4, T4, RTX 4090).
 
 ---
 
-### 5.3 Batch Inference Summary (BS = 4, 8, 16, 32)
+## 5.2 Batch Inference (BS = 4, 8, 16, 32)
 
-#### **Baseline Batch**
+### **Baseline Batch**
 | GPU | Max TPS |
 |------|---------|
-| A100 | **3730 tok/s @ BS=32** |
+| A100 | **3730 tok/s (BS=32)** |
 | L4 | OOM at BS=32 |
 
 ---
 
-#### **FlashAttention Batch**
-Throughput increases with batch size but remains **consistently below baseline**.
+### **FlashAttention Batch**
+- Always below baseline throughput across all batch sizes.  
+- Shows that LLaVA is **not compute-bound**, but **KV-bound**.
 
 ---
 
-#### **KV Cache Batch**
+### **KV Cache Batch**
 | GPU | Max TPS |
-|------|---------|
-| A100 | **4368 tok/s** |
+|------|----------|
+| A100 | **4367.99 tok/s** |
 | L4 | OOM at BS=32 |
 
-➡ KV cache again provides the largest gain.
+➡ KV cache improves throughput beyond baseline as batch size increases.
 
 ---
 
-#### **Channel-Wise INT4/INT8 Pruning**
-| Method | L4 Max TPS | A100 Max TPS |
-|---------|--------------|----------------|
-| INT4 channel prune | 2843 | **2843** |
-| INT8 channel prune | 1070 | 1070 |
+### **Channel-wise Pruning — Most Important Batch Finding**
+From `channel_prune_quant_batch.py` (Case A: prune-only):
 
-➡ Channel pruning is **best for large-batch workloads**.
+| BS | L4 TPS | A100 TPS |
+|----|--------|-----------|
+| 4  | 361.28 | 1724.47 |
+| 8  | OOM | 1234.43 |
+| 16 | OOM | **6818.94** |
+| 32 | OOM | 3457.34 |
 
----
+Key insights:
+- **6818.94 tok/s @ BS=16** on A100 is the **highest throughput of all experiments**.  
+- **Channel-wise pruning surpasses both baseline and KV cache** for batch efficiency.  
+- However, **stability decreases at BS ≥ 32** due to aggressive channel removal.  
+- L4 frequently hits memory limits at BS ≥ 8.
 
-## 5.4 Summary of Main Results
-
-#### ✅ **1. KV cache is the dominant factor influencing decoding speed.**  
-Reusing KV boosts throughput from **15 → 160 tok/s** (L4) and **22 → 161 tok/s** (A100).  
-No other method matches this jump.
-
----
-
-#### ✅ **2. Different pruning strategies excel in different scenarios.**
-- **Tensor-wise pruning** → best for **BS=1 / image-by-image inference**  
-  (200–310 tok/s, highest speed of all methods)
-- **Channel-wise pruning** → best for **batch inference (BS=16–32)**  
-  (up to 2843 tok/s)
+➡ **Best choice for maximizing throughput in real production batch inference.**
 
 ---
 
-#### ✅ **3. Low-bit KV compression gives huge memory savings.**
-- INT4 KV reduces memory from **13.5 GB → 5.0 GB**
-- Throughput remains ~100 tok/s
+### **Tensor-wise Pruning (Batch Mode)**
+- Only BS=4 is stable; BS ≥ 8 causes OOM on both GPUs.  
+- Much weaker than channel-wise pruning for batch workloads.
 
-➡ Ideal for deployment on memory-limited GPUs (L4 / T4 / consumer cards).
-
----
-
-#### ✅ **4. Weight-only quantization is unsuitable for multimodal LLaVA.**
-- bitsandbytes INT8/INT4 slows decoding  
-- Throughput drops to 14–15 tok/s  
-- Sometimes unstable generation
-
-➡ KV-only quantization is far superior.
+➡ Not suitable for batching, only good for BS=1.
 
 ---
 
-#### ✅ **5. FlashAttention provides limited benefit.**
-- Slight latency gains  
-- Does **not** significantly improve throughput  
-- Compute-bound operations are not the bottleneck in LLaVA
+### **INT4 / INT8 Pruning + Quantization (Batch Mode)**
+General findings from `int4_*_batch.py` and `int8_*_batch.py`:
+
+- INT4 / INT8 reduce memory significantly.
+- Throughput usually drops by 30–70%.
+- Many configurations OOM at BS ≥ 16.
+- Best use case: **low-memory batch inference** (L4) when throughput is not the priority.
+
+➡ Useful only when memory is the main constraint, not throughput.
 
 ---
 
-#### ✅ **6. Hybrid KV prune + quant yields the most balanced real-world performance.**
-- Strong throughput gains (300–640 TPS at BS=4)  
+## 6. Summary of Main Results
+
+### ✅ 1. KV Cache Is the Most Important Speedup Factor  
+Boosts throughput from **15 → 108 tok/s (L4)** and **22 → 161 tok/s (A100)**.  
+All high-performance setups rely on KV reuse.
+
+### ✅ 2. Tensor-wise Pruning Is Best for BS = 1  
+Fastest single-image inference:  
+**204–310 tok/s**, outperforming every other method.
+
+### ✅ 3. Channel-wise Pruning Is Best for Batch Inference  
+- **6818.94 tok/s @ BS=16 (A100)** — highest performance in the entire project.  
+- But becomes **unstable at BS ≥ 32** on A100 and **BS ≥ 8** on L4.
+
+### ✅ 4. INT4 KV Quantization Gives the Best Memory Savings  
+- Reduces KV memory from **13.5 GB → 5.0 GB**  
+- Only moderate throughput loss  
+- Ideal for mid-tier GPUs (L4 / T4 / RTX)
+
+### ✅ 5. bitsandbytes Weight Quantization Is Not Suitable for LLaVA  
+- Slower throughput (~14–15 tok/s)  
+- Unstable generation  
+- Only beneficial for reducing model size
+
+### ✅ 6. FlashAttention Gives Minor Gains  
+Compute is not the real bottleneck in LLaVA, so improvements are limited.
+
+### ✅ 7. Hybrid KV Prune + KV Quant Is the Best Trade-off  
+- Strong throughput  
 - Major memory savings  
-- Works on both L4 and A100
-
-➡ These methods are the most practical for real LLaVA deployments.
+- Works across both L4 and A100  
+- Especially good for **BS = 4–8** workloads
 
 ---
 
-## 5.5 Final Observation
+These results form a clear deployment guideline:
 
-Across all experiments:
+- **BS=1** → Use **tensor-wise pruning**  
+- **BS=4–16** → Use **channel-wise pruning**  
+- **Low-memory GPU** → Use **INT4 KV quantization**  
+- **Avoid** bitsandbytes for speed-critical tasks  
+- **Avoid** FlashAttention as the only optimization  
 
-🔹 **KV cache** = biggest speedup  
-🔹 **Tensor-wise prune** = fastest per-image  
-🔹 **Channel-wise prune** = best for batching  
-🔹 **INT4 KV** = best memory saving  
-🔹 **bitsandbytes** = only useful for reducing model size, not speed  
-🔹 **FlashAttention** = minor improvement  
-🔹 **Hybrid prune + quant** = best overall tradeoff
-
-This provides a clear roadmap for practitioners building efficient LLaVA inference systems.
-
+This completes the Part 5 and Part 6 sections of the README.
 
